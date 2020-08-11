@@ -1,11 +1,10 @@
 const express = require("express");
-const db = require("../data/dbConfig");
+const Cars = require("../data/db-helpers");
 const router = express.Router();
 
 router.get("/", (req, res) => {
   try {
-    db("cars")
-      .select("*")
+    Cars.get()
       .then((cars) => {
         res.status(200).json({ data: cars });
       })
@@ -22,9 +21,7 @@ router.get("/", (req, res) => {
 
 router.get("/:id", validateCarId, (req, res) => {
   try {
-    db("cars")
-      .select("*")
-      .where({ id: req.car })
+    Cars.getByID(req.car)
       .then((car) => {
         res.status(200).json({ data: car });
       })
@@ -42,21 +39,9 @@ router.get("/:id", validateCarId, (req, res) => {
 router.post("/", validateCarInfo, (req, res) => {
   const carInfo = req.body;
   try {
-    db("cars")
-      .insert(carInfo)
+    Cars.insertCar(carInfo)
       .then((newCar) => {
-        db("cars")
-          .select("*")
-          .where({ id: newCar })
-          .then((car) => {
-            res.status(200).json({ data: car });
-          })
-          .catch((err) => {
-            console.log(err);
-            res.status(404).json({
-              message: "Can't retrieve information from cars database",
-            });
-          });
+        res.status(200).json({ data: newCar });
       })
       .catch((err) => {
         console.log(err);
@@ -71,14 +56,11 @@ router.put("/:id", validateCarId, (req, res) => {
   const changes = req.body;
 
   try {
-    db("cars")
-      .where({ id: req.car })
-      .update(changes)
-      .then((count) => {
-        if (count) {
-          res.status(200).json({ message: "Updated car successfully" });
-        }
-      });
+    Cars.update(req.car, changes).then((count) => {
+      if (count) {
+        res.status(200).json({ message: "Updated car successfully" });
+      }
+    });
   } catch {
     console.log(err);
     res.status(500).json({ errorMessage: err.message });
@@ -87,15 +69,12 @@ router.put("/:id", validateCarId, (req, res) => {
 
 router.delete("/:id", validateCarId, (req, res) => {
   try {
-    db("cars")
-      .where({ id: req.car })
-      .delete()
-      .then((count) => {
-        if (count) {
-          res.status(200).json({ message: "Car deleted successfully" });
-        }
-      });
-  } catch {
+    Cars.remove(req.car).then((count) => {
+      if (count) {
+        res.status(200).json({ message: "Car deleted successfully" });
+      }
+    });
+  } catch (err) {
     console.log(err);
     res.status(500).json({ errorMessage: err.message });
   }
@@ -104,10 +83,9 @@ router.delete("/:id", validateCarId, (req, res) => {
 function validateCarId(req, res, next) {
   const carId = req.params.id;
 
-  db("cars")
-    .where({ id: carId })
+  Cars.getByID(carId)
     .then((car) => {
-      req.car = car[0].id;
+      req.car = car.id;
       next();
     })
     .catch((err) => {

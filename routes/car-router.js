@@ -67,6 +67,24 @@ router.post("/", validateCarInfo, (req, res) => {
   }
 });
 
+router.put("/:id", validateCarId, (req, res) => {
+  const changes = req.body;
+
+  try {
+    db("cars")
+      .where({ id: req.car })
+      .update(changes)
+      .then((count) => {
+        if (count) {
+          res.status(200).json({ message: "Updated car successfully" });
+        }
+      });
+  } catch {
+    console.log(err);
+    res.status(500).json({ errorMessage: err.message });
+  }
+});
+
 function validateCarId(req, res, next) {
   const carId = req.params.id;
 

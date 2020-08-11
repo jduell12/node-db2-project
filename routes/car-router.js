@@ -39,6 +39,34 @@ router.get("/:id", validateCarId, (req, res) => {
   }
 });
 
+router.post("/", validateCarInfo, (req, res) => {
+  const carInfo = req.body;
+  try {
+    db("cars")
+      .insert(carInfo)
+      .then((newCar) => {
+        db("cars")
+          .select("*")
+          .where({ id: newCar })
+          .then((car) => {
+            res.status(200).json({ data: car });
+          })
+          .catch((err) => {
+            console.log(err);
+            res.status(404).json({
+              message: "Can't retrieve information from cars database",
+            });
+          });
+      })
+      .catch((err) => {
+        console.log(err);
+        res.status(400).json({ message: "Unable to add car to database" });
+      });
+  } catch {
+    res.status(500).json({ errorMessage: err.message });
+  }
+});
+
 function validateCarId(req, res, next) {
   const carId = req.params.id;
 
@@ -51,6 +79,22 @@ function validateCarId(req, res, next) {
     .catch((err) => {
       res.status(404).json({ message: "invalid user id" });
     });
+}
+
+function validateCarInfo(req, res, next) {
+  const carInfo = req.body;
+  if (!carInfo) {
+    res.status(400).json({ message: "Missing car data" });
+  } else {
+    const { VIN, make, model, mileage } = carInfo;
+    if (!VIN || !make || !model || !mileage) {
+      res
+        .status(400)
+        .json({ message: "Car data needs VIN, make, model and mileage" });
+    } else {
+      next();
+    }
+  }
 }
 
 module.exports = router;

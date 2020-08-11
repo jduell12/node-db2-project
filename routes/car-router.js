@@ -85,6 +85,22 @@ router.put("/:id", validateCarId, (req, res) => {
   }
 });
 
+router.delete("/:id", validateCarId, (req, res) => {
+  try {
+    db("cars")
+      .where({ id: req.car })
+      .delete()
+      .then((count) => {
+        if (count) {
+          res.status(200).json({ message: "Car deleted successfully" });
+        }
+      });
+  } catch {
+    console.log(err);
+    res.status(500).json({ errorMessage: err.message });
+  }
+});
+
 function validateCarId(req, res, next) {
   const carId = req.params.id;
 
